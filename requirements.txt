@@ -6,3 +6,6 @@ xgboost
 matplotlib
 seaborn
 shap
+black
+pylint
+graphviz
