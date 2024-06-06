@@ -97,3 +97,11 @@ def collect_from_database(query: str) -> pd.DataFrame:
         [1, None, 0], size=(n_rows), p=[0.16, 0.7, 0.14]
     )
     return df
+
+def drop_distinct(df: pd.DataFrame) -> pd.DataFrame:
+
+    print(f"before_duplicates drop{df.shape}")
+    df = df.drop_duplicates()
+    print(f"after_duplicates_drop{df.shape}")
+
+    return df

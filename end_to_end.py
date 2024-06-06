@@ -14,7 +14,7 @@ import mlflow
 from mlflow.models import infer_signature
 import os
 
-from end_to_end_utils import collect_from_database
+from end_to_end_utils import collect_from_database, drop_distinct
 
 #Seed
 np.random.seed(1889)
@@ -30,6 +30,8 @@ datalake_name = "rg_data_lake"
 dataset_from_database = collect_from_database(
     "SELECT * FROM CLAIMS.DS_DATASET"
 )
+
+dataset_from_database = drop_distinct(dataset_from_database)
 
 total = dataset_from_database.isnull().sum()
 percent = (dataset_from_database.isnull().sum() / dataset_from_database.isnull().count()*100)
@@ -53,7 +55,7 @@ for column in non_numerical:
 X, y = dataset_from_database.drop('claim_status', axis=1), dataset_from_database[['claim_status']]
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1889)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1889, stratify=y)
 
 # Build the evaluation set & metric list
 eval_set = [(X_train, y_train)]
@@ -135,7 +137,7 @@ parameter_gridSearch = RandomizedSearchCV(
     'n_estimators': stats.randint(50, 500),
     'learning_rate': stats.uniform(0.01, 0.75),
     'subsample': stats.uniform(0.25, 0.75),
-    'max_depth': stats.randint(1, 8),
+    'max_depth': stats.randint(1, 5),
     'colsample_bytree': stats.uniform(0.1, 0.75),
     'min_child_weight': [1, 3, 5, 7, 9],
     },
@@ -204,21 +206,22 @@ print("ROC on train data: ", roc_auc_score(y_train, train_prob_preds2))
 print("ROC on test data: ", roc_auc_score(y_test, test_prob_preds2))
 
 print()
-fpr, tpr, _ = roc_curve(y_test, test_prob_preds2)
-random_fpr, random_tpr, _ = roc_curve(y_test, [0 for _ in range(len(y_test))])
-fig, ax = plt.subplots(figsize=(8,6))
-plt.plot(fpr, tpr, marker='.', label='XGBoost')
-plt.plot(random_fpr, random_tpr, linestyle='--')
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title("Receiver Operating Curve")
+
 print("Train log loss: ", log_loss(y_train, train_prob_preds2))
 print("Test log loss: ", log_loss(y_test, test_prob_preds2))
 
 print()
-print("F1 score is: ", f1_score(y_test, test_class_preds2))
-print("Precision is: ", precision_score(y_test, test_class_preds2))
-print("Recall is: ", recall_score(y_test, test_class_preds2))
+
+f1_score = f1_score(y_test, test_class_preds2)
+print("F1 score is: ", f1_score)
+
+precision_score = precision_score(y_test, test_class_preds2)
+
+print("Precision is: ", precision_score)
+
+
+recall_score = recall_score(y_test, test_class_preds2)
+print("Recall is: ", recall_score)
 
 # Set our tracking server uri for logging
 mlflow.set_tracking_uri(uri="http://127.0.0.1:8080")
@@ -234,9 +237,12 @@ with mlflow.start_run():
     # Log the loss metric
     mlflow.log_metric("test_accuracy", test_accuracy)
     mlflow.log_metric("training_accuracy", training_accuracy)
+    mlflow.log_metric("f1_score", f1_score)
+    mlflow.log_metric("precision_score", precision_score)
+    mlflow.log_metric("recall_score", recall_score)
 
     # Set a tag that we can use to remind ourselves what this run was for
-    mlflow.set_tag("Training Info", "Model for credit model")
+    mlflow.set_tag("Training Info", "With Stratify = y and max_depth = 5")
 
     # Infer the model signature
     signature = infer_signature(X_train, parameter_gridSearch.predict(X_train))

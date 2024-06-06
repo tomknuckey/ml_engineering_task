@@ -5,3 +5,5 @@ mlartifacts
 mlruns
 cleaner.ipynb
 __pycache__/end_to_end_utils.cpython-311.pyc
+question_answering.md
+__pycache__/test_my_module.cpython-311-pytest-8.2.2.pyc
