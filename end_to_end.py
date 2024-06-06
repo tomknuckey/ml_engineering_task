@@ -1,7 +1,10 @@
+"""
+Accesses the data, then creates the model and evaluates it where the results are tracked in pytest
+"""
+
 import pandas as pd
 import numpy as np
 from scipy import stats
-from sklearn.datasets import *
 from sklearn.metrics import (
     cohen_kappa_score,
     accuracy_score,
@@ -10,33 +13,20 @@ from sklearn.metrics import (
     recall_score,
     confusion_matrix,
     roc_auc_score,
-    confusion_matrix,
     log_loss,
     roc_curve,
 )
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from sklearn.preprocessing import MinMaxScaler
 import xgboost as xgb
 import matplotlib.pyplot as plt
-import seaborn as sns
-import string
-import shap
 import mlflow
 from mlflow.models import infer_signature
-import os
 
 from end_to_end_utils import collect_from_database, drop_distinct
 
 # Seed
 np.random.seed(1889)
 
-
-account_name = "rg_data_sci"
-client_id = "a1b2c3d4"
-# client_secret = "b1c2d3e4" #Delete before commiting to ADO!!!
-subscription_id = "8a7b6c5d"
-tenant_id = "6f5g4h3i"
-datalake_name = "rg_data_lake"
 
 dataset_from_database = collect_from_database("SELECT * FROM CLAIMS.DS_DATASET")
 
@@ -108,18 +98,6 @@ model = xgb.XGBClassifier(
 
 model.fit(X_test, y_test, eval_set=eval_set, verbose=10)
 
-from sklearn.metrics import (
-    cohen_kappa_score,
-    accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    confusion_matrix,
-    roc_auc_score,
-    confusion_matrix,
-    log_loss,
-    roc_curve,
-)
 
 train_class_preds = model.predict(X_train)
 test_class_preds = model.predict(X_test)
@@ -205,19 +183,6 @@ model3 = xgb.XGBClassifier(
 )
 
 model3.fit(X_train, y_train, eval_set=eval_set, verbose=False)
-
-from sklearn.metrics import (
-    cohen_kappa_score,
-    accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    confusion_matrix,
-    roc_auc_score,
-    confusion_matrix,
-    log_loss,
-    roc_curve,
-)
 
 train_class_preds2 = model3.predict(X_train)
 test_class_preds2 = model3.predict(X_test)
