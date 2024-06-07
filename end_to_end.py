@@ -85,7 +85,7 @@ X, y = (
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=1889, stratify=y
+    X, y, test_size=0.2, random_state=1889
 )
 
 # Build the evaluation set & metric list
@@ -133,14 +133,6 @@ print("ROC on train data: ", roc_auc_score(y_train, train_prob_preds))
 print("ROC on test data: ", roc_auc_score(y_test, test_prob_preds))
 
 print()
-fpr, tpr, _ = roc_curve(y_test, test_prob_preds)
-random_fpr, random_tpr, _ = roc_curve(y_test, [0 for _ in range(len(y_test))])
-fig, ax = plt.subplots(figsize=(8, 6))
-plt.plot(fpr, tpr, marker=".", label="XGBoost")
-plt.plot(random_fpr, random_tpr, linestyle="--")
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("Receiver Operating Curve")
 print("Train log loss: ", log_loss(y_train, train_prob_preds))
 print("Test log loss: ", log_loss(y_test, test_prob_preds))
 
@@ -160,7 +152,7 @@ parameter_gridSearch = RandomizedSearchCV(
         "n_estimators": stats.randint(50, 500),
         "learning_rate": stats.uniform(0.01, 0.75),
         "subsample": stats.uniform(0.25, 0.75),
-        "max_depth": stats.randint(1, 5),
+        "max_depth": stats.randint(1, 8),
         "colsample_bytree": stats.uniform(0.1, 0.75),
         "min_child_weight": [1, 3, 5, 7, 9],
     },
@@ -258,7 +250,7 @@ with mlflow.start_run():
     mlflow.log_metric("recall_score", recall_score)
 
     # Set a tag that we can use to remind ourselves what this run was for
-    mlflow.set_tag("Training Info", "With Stratify = y and max_depth = 5")
+    mlflow.set_tag("Training Info", "Without Starifty and max_depth = 8")
 
     # Infer the model signature
     signature = infer_signature(X_train, parameter_gridSearch.predict(X_train))
