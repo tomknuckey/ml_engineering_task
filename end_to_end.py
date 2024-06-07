@@ -14,11 +14,9 @@ from sklearn.metrics import (
     confusion_matrix,
     roc_auc_score,
     log_loss,
-    roc_curve,
 )
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import xgboost as xgb
-import matplotlib.pyplot as plt
 import mlflow
 from mlflow.models import infer_signature
 

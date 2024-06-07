@@ -1,12 +1,24 @@
-# Data generation function - this is not part of the task, and is only to simulate pulling from a SQL database
+"""
+Utils which are used in the end to end process
+
+"""
+
+# Data generation function - this is not part of the task
+# and is only to simulate pulling from a SQL database
 # Don't worry about changing this - it's just to make the notebook a little easier!
+import string
 import pandas as pd
 import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.preprocessing import MinMaxScaler
-import string
+
 
 def collect_from_database(query: str) -> pd.DataFrame:
+
+    """
+    Prepares a random data table with the required features
+    
+    """
     print(f"Executing: {query}")
     n_rows = 10_000
     n_features = 16
@@ -99,6 +111,10 @@ def collect_from_database(query: str) -> pd.DataFrame:
     return df
 
 def drop_distinct(df: pd.DataFrame) -> pd.DataFrame:
+
+    """
+    Drops the duplicate rows when the shape is printed
+    """
 
     print(f"before_duplicates drop{df.shape}")
     df = df.drop_duplicates()
