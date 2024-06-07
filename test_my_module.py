@@ -4,7 +4,7 @@ Here the test functions are defined
 
 import pandas as pd
 import pytest
-from end_to_end_utils import drop_distinct
+from end_to_end_utils import drop_distinct, collect_from_database
 
 
 def test_drop_distinct_identical():
@@ -49,3 +49,12 @@ def test_drop_distinct_extra_row():
 
     # Check if the result DataFrame matches the expected DataFrame
     pd.testing.assert_frame_equal(result_df, expected_df)
+
+def test_claim_response():
+
+    """
+    Check there's claim status of 0 and 1 and nothing else in the database
+    """
+
+    assert collect_from_database("SELECT * FROM CLAIMS.DS_DATASET")['claim_status'].max() == 1
+    assert collect_from_database("SELECT * FROM CLAIMS.DS_DATASET")['claim_status'].min() == 0

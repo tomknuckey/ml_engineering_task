@@ -8,10 +8,18 @@ I have created MLFlow to experiment changing the model to track how it's changed
 
 This will allow me to promote the best model to production
 
+## CI/CD pipeline
+
+I've used github actions to implement pylint scoring and running of the tests - this doesn't stop the PR happening but it sends a warning to my email
+
 ### Original Trial
 
 The accuracy on train dataset is:  0.9815
 The accuracy on test dataset is:  0.959
+
+F1 score is:  0.8624
+Precision is:  0.9698
+Recall is:  0.7764
 
 This is overfitting
 
@@ -20,16 +28,21 @@ This is overfitting
 The accuracy on train dataset is:  1.0
 The accuracy on test dataset is:  0.9635
 
+F1 score is:  0.8777
+Precision is:  0.9493
+Recall is:  0.8162
+
+
 This is overfitting - still slightly better though 
 
 ## Reducing Max Depth
 
-The accuracy on train dataset is:  0.960625
+The accuracy on train dataset is:  0.9606
 The accuracy on test dataset is:  0.957
 
-F1 score is:  0.8576158940397351
-Precision is:  0.9151943462897526
-Recall is:  0.8068535825545171
+F1 score is:  0.8576
+Precision is:  0.9152
+Recall is:  0.8069
 
 
 # How I would deploy this in Azure / Databricks 
