@@ -9,3 +9,5 @@ shap
 black
 pylint
 graphviz
+mlflow
+pytest
