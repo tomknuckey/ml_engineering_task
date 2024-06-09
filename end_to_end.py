@@ -25,29 +25,16 @@ from end_to_end_utils import collect_from_database, drop_distinct
 # Seed
 np.random.seed(1889)
 
-
-dataset_from_database = collect_from_database("SELECT * FROM CLAIMS.DS_DATASET")
-
-dataset_from_database = drop_distinct(dataset_from_database)
-
-total = dataset_from_database.isnull().sum()
-percent = (
-    dataset_from_database.isnull().sum() / dataset_from_database.isnull().count() * 100
+# Data Prep
+dataset_from_database = collect_from_database("SELECT * FROM CLAIMS.DS_DATASET").pipe(
+    drop_distinct
 )
-missing_df = pd.concat([total, percent], axis=1, keys=["Total", "Percent"])
-types = []
-for col in dataset_from_database.columns:
-    dtype = str(dataset_from_database[col].dtype)
-    types.append(dtype)
-missing_df["Types"] = types
-dataset_from_database_no_missing_values = pd.DataFrame()
-dataset_from_database_no_missing_values = dataset_from_database.drop(
-    columns=["family_history_3", "employment_type"]
-)
+
 dataset_from_database.drop(
     columns=["family_history_3", "employment_type"], inplace=True
 )
 
+# Changing data types
 non_numerical = [
     "gender",
     "marital_status",
@@ -83,25 +70,33 @@ X, y = (
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=1889
+    X, y, test_size=0.2, random_state=1889, stratify=y
 )
 
 # Build the evaluation set & metric list
 eval_set = [(X_train, y_train)]
 eval_metrics = ["auc", "rmse", "logloss"]
 
+
+# Define the original logistic model for the classifier - without CV
 model = xgb.XGBClassifier(
-    objective="binary:logistic", eval_metric=eval_metrics, enable_categorical=True
+    objective="binary:logistic",
+    eval_metric=eval_metrics,
+    enable_categorical=True,
+    reg_alpha=0.1,
+    reg_lambda=1.0,
 )
 
+# Fits the model
 model.fit(X_test, y_test, eval_set=eval_set, verbose=10)
 
-
+# Predicting on the training and test data
 train_class_preds = model.predict(X_train)
 test_class_preds = model.predict(X_test)
 train_prob_preds = model.predict_proba(X_train)[:, 1]
 test_prob_preds = model.predict_proba(X_test)[:, 1]
 
+# Generating the Cohen Kappa score on the training data
 y = np.array(y_train)
 y = y.astype(int)
 yhat = np.array(train_class_preds)
@@ -109,6 +104,7 @@ yhat = np.clip(np.round(yhat), np.min(y), np.max(y)).astype(int)
 training_data_kappa_score = round(cohen_kappa_score(yhat, y, weights="quadratic"), 2)
 print(f"The Cohen Kappa score on the training data is: {training_data_kappa_score}")
 
+# Generating the Cohen Kappa score on the test data
 y = np.array(y_test)
 y = y.astype(int)
 yhat = np.array(test_class_preds)
@@ -116,6 +112,8 @@ yhat = np.clip(np.round(yhat), np.min(y), np.max(y)).astype(int)
 test_data_kappa_score = round(cohen_kappa_score(yhat, y, weights="quadratic"), 2)
 print(f"The Cohen Kappa score on the test data is: {test_data_kappa_score}")
 
+
+# Outputting the accuracy, confusion matrix and Roc, log loss on training and test data
 print()
 print("The accuracy on train dataset is: ", accuracy_score(y_train, train_class_preds))
 print("The accuracy on test dataset is: ", accuracy_score(y_test, test_class_preds))
@@ -134,11 +132,15 @@ print()
 print("Train log loss: ", log_loss(y_train, train_prob_preds))
 print("Test log loss: ", log_loss(y_test, test_prob_preds))
 
+
+# Generate those f1 score, precision and recall
 print()
 print("F1 score is: ", f1_score(y_test, test_class_preds))
 print("Precision is: ", precision_score(y_test, test_class_preds))
 print("Recall is: ", recall_score(y_test, test_class_preds))
 
+
+# Hyper parameter tuning
 parameter_gridSearch = RandomizedSearchCV(
     estimator=xgb.XGBClassifier(
         objective="binary:logistic",
@@ -153,6 +155,8 @@ parameter_gridSearch = RandomizedSearchCV(
         "max_depth": stats.randint(1, 8),
         "colsample_bytree": stats.uniform(0.1, 0.75),
         "min_child_weight": [1, 3, 5, 7, 9],
+        "reg_alpha": stats.uniform(0.0, 1.0),
+        "reg_lambda": stats.uniform(0.0, 1.0),
     },
     cv=5,
     n_iter=100,
@@ -248,7 +252,7 @@ with mlflow.start_run():
     mlflow.log_metric("recall_score", recall_score)
 
     # Set a tag that we can use to remind ourselves what this run was for
-    mlflow.set_tag("Training Info", "Without Starifty and max_depth = 8")
+    mlflow.set_tag("Training Info", "Alpha and lambda regularization with Stratify")
 
     # Infer the model signature
     signature = infer_signature(X_train, parameter_gridSearch.predict(X_train))
